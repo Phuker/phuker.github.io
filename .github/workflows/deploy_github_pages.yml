@@ -24,13 +24,13 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download and extract remote tarball
-                env:
-                    REMOTE_TARBALL_URL: ${{ secrets.REMOTE_TARBALL_URL }}
-                run: curl -fsSL "${REMOTE_TARBALL_URL:?invalid}" | tar -xzvf -
+              env:
+                  REMOTE_TARBALL_URL: ${{ secrets.REMOTE_TARBALL_URL }}
+              run: curl -fsSL "${REMOTE_TARBALL_URL:?invalid}" | tar -xzvf -
             - name: Upload artifact
-                uses: actions/upload-pages-artifact@v1
-                with:
-                    path: '.'
+              uses: actions/upload-pages-artifact@v1
+              with:
+                  path: '.'
             - name: Deploy to GitHub Pages
-                id: deployment
-                uses: actions/deploy-pages@v1
+              id: deployment
+              uses: actions/deploy-pages@v1
