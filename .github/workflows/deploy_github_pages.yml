@@ -1,0 +1,36 @@
+name: Deploy remote static content to GitHub Pages
+
+on:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+    group: "pages"
+    cancel-in-progress: true
+
+jobs:
+    # Single deploy job since we're just deploying
+    deploy:
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download and extract remote tarball
+                env:
+                    REMOTE_TARBALL_URL: ${{ secrets.REMOTE_TARBALL_URL }}
+                run: curl -fsSL "${REMOTE_TARBALL_URL:?invalid}" | tar -xzvf -
+            - name: Upload artifact
+                uses: actions/upload-pages-artifact@v1
+                with:
+                    path: '.'
+            - name: Deploy to GitHub Pages
+                id: deployment
+                uses: actions/deploy-pages@v1
