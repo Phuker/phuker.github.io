@@ -51,6 +51,11 @@ tar --owner 0 --group 0 --numeric-owner -czvf files.tar.gz -C /path/to/static/di
 
 # Enter your password after this command is started
 openssl enc -aes-256-cbc -pbkdf2 -pass stdin -in files.tar.gz -out files.tar.gz.enc
+
+# ------ Or ------
+
+# Combine the two commands above, the password is hard-coded into the command parameters
+tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | openssl enc -aes-256-cbc -pbkdf2 -pass pass:YOUR_PASSWORD_123456 -in - -out files.tar.gz.enc
 ```
 
 - Upload `./files.tar.gz.enc` to your server
@@ -58,3 +63,5 @@ openssl enc -aes-256-cbc -pbkdf2 -pass stdin -in files.tar.gz -out files.tar.gz.
     - If it runs successfully, the workflow run is automatically deleted, no further operation required
     - If the run fails, you need to manually delete all workflow runs after troubleshooting
 - Delete the `files.tar.gz.enc file` from your server
+
+It is recommended that the above steps be fixed as a custom script.

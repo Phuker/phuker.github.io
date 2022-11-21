@@ -51,6 +51,11 @@ tar --owner 0 --group 0 --numeric-owner -czvf files.tar.gz -C /path/to/static/di
 
 # 启动此命令后，输入加密解密口令
 openssl enc -aes-256-cbc -pbkdf2 -pass stdin -in files.tar.gz -out files.tar.gz.enc
+
+# ------ 或者 ------
+
+# 合并以上两条命令，加密解密口令硬编码到命令参数
+tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | openssl enc -aes-256-cbc -pbkdf2 -pass pass:YOUR_PASSWORD_123456 -in - -out files.tar.gz.enc
 ```
 
 - 把 `./files.tar.gz.enc` 文件上传到你的服务器
@@ -58,3 +63,5 @@ openssl enc -aes-256-cbc -pbkdf2 -pass stdin -in files.tar.gz -out files.tar.gz.
     - 如果运行成功，会自动删除 workflow run，无需进一步操作
     - 如果运行失败，需要在排除错误后手动删除所有 workflow run
 - 删除你的服务器上的 `files.tar.gz.enc` 文件
+
+建议将以上步骤固定为自定义脚本。
