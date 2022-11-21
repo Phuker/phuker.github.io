@@ -22,8 +22,9 @@ jobs:
         steps:
             - name: Download and extract remote tarball
               env:
-                  REMOTE_TARBALL_URL: ${{ secrets.REMOTE_TARBALL_URL }}
-              run: curl -fsSL "${REMOTE_TARBALL_URL:?invalid}" | tar -xzf -
+                  REMOTE_FILE_URL: ${{ secrets.REMOTE_FILE_URL }}
+                  REMOTE_FILE_PASSWORD: ${{ secrets.REMOTE_FILE_PASSWORD }}
+              run: curl -fsSL "${REMOTE_FILE_URL:?invalid}" | openssl enc -d -aes-256-cbc -pbkdf2 -pass env:REMOTE_FILE_PASSWORD -in - -out - | tar -xzvf -
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v1
               with:
