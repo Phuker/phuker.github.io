@@ -15,7 +15,7 @@ Free GitHub accounts [can only](https://github.com/pricing) publish GitHub Pages
 
 ## Solution and results
 
-Instead of storing any static website files in GitHub repositories, download static website files remotely through GitHub Actions and publish them directly to GitHub Pages.
+Instead of storing any static website files in GitHub repositories, use GitHub Actions to remotely download static website package file and publish them directly to GitHub Pages.
 
 Results:
 
@@ -28,7 +28,9 @@ Results:
 
 ### Requirements
 
-- A web server, or a file sharing service with direct download links (preferably fixed download links)
+- A web service that can upload and download files, examples include:
+    - A web server (it is recommended to upload to the same path every time, so that the download link will be fixed and you don't need to specify the URL every time you run the workflow)
+    - A file sharing service that provides direct download links, such as [file.io](https://www.file.io/) (file sharing services generally provide dynamic download links, you need to specify the URL every time you run the workflow)
 - Static website files that have been generated
 
 ### Initialization
@@ -36,11 +38,12 @@ Results:
 - Fork this repository, change `repository name`, usually it should be `<your lowercase username>.github.io` ([official documents](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages))
 - Modify the repository settings:
     - `Settings` - `Actions` - `General` - `Artifact and log retention` set to a minimum value of `1` day
-    - `Settings` - `Secrets` - `Actions`, click `New repository secret`, add:
-        - `REMOTE_FILE_URL`: set to the file download URL, e.g. `https://example.com/path/to/files.tar.gz.enc`
-        - `REMOTE_FILE_PASSWORD`: set to the file encryption and decryption password
+    - `Settings` - `Secrets` - `Actions`, click `New repository secret`, and add 2 parameters:
+        - `REMOTE_FILE_URL`: if the URL of the static website package file is fixed, set this parameter to the URL; if the URL is dynamic, you do not need to set this parameter, but specify the URL when you run the workflow.
+        - `REMOTE_FILE_PASSWORD`: it is recommended to set a fixed password for file encryption and decryption. If you prefer to use a dynamic password, you do not need to set this parameter, but specify a password each time you run the workflow. If not specified in both places, the decryption step will be skipped after downloading the static website package file.
+        - If any of the above parameters are fixed, set them as secrets here, and don't specify them when running the workflow. The reason is that the parameters specified when running workflow are output directly to the workflow run log, which is publicly viewable and cannot be hidden. If you specify these parameters both in secrets and when running the workflow, the latter will overwrite the former.
     - `Settings` - `Pages`, change `Source` to `GitHub Actions`
-- The first time you enter `Actions`, you will get a warning `I understand my workflows, go ahead and enable them`, confirm the warning
+- The first time you enter `Actions`, you will get a warning `Workflows aren’t being run on this forked repository`, click the `I understand my workflows, go ahead and enable them` button to confirm the warning.
 
 ### Deployment
 

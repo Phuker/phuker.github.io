@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
     # Allows you to run this workflow manually from the Actions tab
     workflow_dispatch:
+        inputs:
+            remote_file_url:
+                description: 'Remote file URL'
+                required: false
+            remote_file_password:
+                description: 'Remote file password'
+                required: false
 
 permissions:
     pages: write
@@ -22,13 +29,40 @@ jobs:
         steps:
             - name: Download and extract remote tarball
               env:
-                  REMOTE_FILE_URL: ${{ secrets.REMOTE_FILE_URL }}
-                  REMOTE_FILE_PASSWORD: ${{ secrets.REMOTE_FILE_PASSWORD }}
-              run: curl -fsSL "${REMOTE_FILE_URL:?invalid}" | openssl enc -d -aes-256-cbc -pbkdf2 -pass env:REMOTE_FILE_PASSWORD -in - -out - | tar -xzvf -
+                    DEFAULT_REMOTE_FILE_URL: ${{ secrets.REMOTE_FILE_URL }}
+                    DEFAULT_REMOTE_FILE_PASSWORD: ${{ secrets.REMOTE_FILE_PASSWORD }}
+                    INPUTS_REMOTE_FILE_URL: ${{ github.event.inputs.remote_file_url }}
+                    INPUTS_REMOTE_FILE_PASSWORD: ${{ github.event.inputs.remote_file_password }}
+              shell: bash
+              run: |
+                    if [ -n "${INPUTS_REMOTE_FILE_URL:+x}" ]; then
+                        REMOTE_FILE_URL="${INPUTS_REMOTE_FILE_URL}";
+                    elif [ -n "${DEFAULT_REMOTE_FILE_URL:+x}" ]; then
+                        REMOTE_FILE_URL="${DEFAULT_REMOTE_FILE_URL}";
+                    else
+                        echo 'Error: REMOTE_FILE_URL not specified';
+                        exit 1;
+                    fi
+
+                    if [ -n "${INPUTS_REMOTE_FILE_PASSWORD:+x}" ]; then
+                        export REMOTE_FILE_PASSWORD="${INPUTS_REMOTE_FILE_PASSWORD}";
+                    elif [ -n "${DEFAULT_REMOTE_FILE_PASSWORD:+x}" ]; then
+                        export REMOTE_FILE_PASSWORD="${DEFAULT_REMOTE_FILE_PASSWORD}";
+                    else
+                        echo 'REMOTE_FILE_PASSWORD not specified';
+                    fi
+
+                    if [ -n "${REMOTE_FILE_PASSWORD:+x}" ]; then
+                        echo 'Download, decrypt, and extract';
+                        curl -fsSL "${REMOTE_FILE_URL:?invalid}" | openssl enc -d -aes-256-cbc -pbkdf2 -pass env:REMOTE_FILE_PASSWORD -in - -out - | tar -xzvf -
+                    else
+                        echo 'Download and extract';
+                        curl -fsSL "${REMOTE_FILE_URL:?invalid}" | tar -xzvf -
+                    fi
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v1
               with:
-                  path: '.'
+                    path: '.'
             - name: Deploy to GitHub Pages
               id: deployment
               uses: actions/deploy-pages@v1
