@@ -7,6 +7,15 @@ on:
             remote_file_url:
                 description: 'Remote file URL'
                 required: false
+            remote_file_type:
+                description: 'Remote file type'
+                required: false
+                default: ''
+                type: choice
+                options:
+                - ''
+                - 7z
+                - tar
             remote_file_password:
                 description: 'Remote file password'
                 required: false
@@ -27,11 +36,14 @@ jobs:
             url: ${{ steps.deployment.outputs.page_url }}
         runs-on: ubuntu-latest
         steps:
-            - name: Download and extract remote tarball
+            - name: Download and extract remote file
               env:
                     DEFAULT_REMOTE_FILE_URL: ${{ secrets.REMOTE_FILE_URL }}
+                    DEFAULT_REMOTE_FILE_TYPE: ${{ secrets.REMOTE_FILE_TYPE }}
                     DEFAULT_REMOTE_FILE_PASSWORD: ${{ secrets.REMOTE_FILE_PASSWORD }}
+
                     INPUTS_REMOTE_FILE_URL: ${{ github.event.inputs.remote_file_url }}
+                    INPUTS_REMOTE_FILE_TYPE: ${{ github.event.inputs.remote_file_type }}
                     INPUTS_REMOTE_FILE_PASSWORD: ${{ github.event.inputs.remote_file_password }}
               shell: bash
               run: |
@@ -44,6 +56,15 @@ jobs:
                         exit 1;
                     fi
 
+                    if [ -n "${INPUTS_REMOTE_FILE_TYPE:+x}" ]; then
+                        REMOTE_FILE_TYPE="${INPUTS_REMOTE_FILE_TYPE}";
+                    elif [ -n "${DEFAULT_REMOTE_FILE_TYPE:+x}" ]; then
+                        REMOTE_FILE_TYPE="${DEFAULT_REMOTE_FILE_TYPE}";
+                    else
+                        echo 'Error: REMOTE_FILE_TYPE not specified';
+                        exit 1;
+                    fi
+
                     if [ -n "${INPUTS_REMOTE_FILE_PASSWORD:+x}" ]; then
                         export REMOTE_FILE_PASSWORD="${INPUTS_REMOTE_FILE_PASSWORD}";
                     elif [ -n "${DEFAULT_REMOTE_FILE_PASSWORD:+x}" ]; then
@@ -52,12 +73,27 @@ jobs:
                         echo 'REMOTE_FILE_PASSWORD not specified';
                     fi
 
-                    if [ -n "${REMOTE_FILE_PASSWORD:+x}" ]; then
-                        echo 'Download, decrypt, and extract';
-                        curl -fsSL "${REMOTE_FILE_URL:?invalid}" | openssl enc -d -aes-256-cbc -pbkdf2 -pass env:REMOTE_FILE_PASSWORD -in - -out - | tar -xzvf -
+                    if [ "${REMOTE_FILE_TYPE:?invalid}" = 'tar' ]; then
+                        if [ -n "${REMOTE_FILE_PASSWORD:+x}" ]; then
+                            echo 'Download --> decrypt --> extract as tar';
+                            curl -fsSL "${REMOTE_FILE_URL:?invalid}" | openssl enc -d -aes-256-cbc -pbkdf2 -pass env:REMOTE_FILE_PASSWORD -in - -out - | tar -xzvf -;
+                        else
+                            echo 'Download --> extract as tar';
+                            curl -fsSL "${REMOTE_FILE_URL:?invalid}" | tar -xzvf -;
+                        fi
+                    elif [ "${REMOTE_FILE_TYPE:?invalid}" = '7z' ]; then
+                        if [ -n "${REMOTE_FILE_PASSWORD:+x}" ]; then
+                            echo 'Download --> decrypt & extract as 7z';
+                            rm -f /tmp/www.7z && curl -fsSL -o /tmp/www.7z "${REMOTE_FILE_URL:?invalid}" && 7z x "-p${REMOTE_FILE_PASSWORD:?invalid}" /tmp/www.7z;
+                            rm -f /tmp/www.7z;
+                        else
+                            echo 'Download --> extract as 7z';
+                            rm -f /tmp/www.7z && curl -fsSL -o /tmp/www.7z "${REMOTE_FILE_URL:?invalid}" && 7z x /tmp/www.7z;
+                            rm -f /tmp/www.7z;
+                        fi
                     else
-                        echo 'Download and extract';
-                        curl -fsSL "${REMOTE_FILE_URL:?invalid}" | tar -xzvf -
+                        echo "Error: unsupported file type: ${REMOTE_FILE_TYPE:?invalid}";
+                        exit 1;
                     fi
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v1
