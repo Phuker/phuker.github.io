@@ -2,7 +2,7 @@
 
 [简体中文](./Readme.md) [English](./Readme.en.md)
 
-Publish GitHub Pages sites privately from public repositories, the effect is similar to using a private repository
+Use GitHub Actions to privately publish GitHub Pages websites from public repositories, completely hiding the file list and history of the websites, no payment required
 
 ## Background
 
@@ -19,7 +19,7 @@ Instead of storing any static website files in GitHub repositories, use GitHub A
 
 Results:
 
-- This solution is also available for free GitHub accounts
+- This solution is available for free GitHub accounts, you don't need to pay only for this feature
 - File modification history is not public, nobody can view historical private data at will
 - The list of files is not public, nobody can easily find secret pages and files
 - Nobody can fork, clone, and downloads static website files
@@ -33,38 +33,79 @@ Results:
     - A file sharing service that provides direct download links, such as [file.io](https://www.file.io/) (file sharing services generally provide dynamic download links, you need to specify the URL every time you run the workflow)
 - Static website files that have been generated
 
-### Initialization
+### Initialize the code repository
 
 - Fork this repository, change `repository name`, usually it should be `<your lowercase username>.github.io` ([official documents](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages))
 - Modify the repository settings:
     - `Settings` - `Actions` - `General` - `Artifact and log retention` set to a minimum value of `1` day
-    - `Settings` - `Secrets` - `Actions`, click `New repository secret`, and add 2 parameters:
-        - `REMOTE_FILE_URL`: if the URL of the static website package file is fixed, set this parameter to the URL; if the URL is dynamic, you do not need to set this parameter, but specify the URL when you run the workflow.
-        - `REMOTE_FILE_PASSWORD`: it is recommended to set a fixed password for file encryption and decryption. If you prefer to use a dynamic password, you do not need to set this parameter, but specify a password each time you run the workflow. If not specified in both places, the decryption step will be skipped after downloading the static website package file.
-        - If any of the above parameters are fixed, set them as secrets here, and don't specify them when running the workflow. The reason is that the parameters specified when running workflow are output directly to the workflow run log, which is publicly viewable and cannot be hidden. If you specify these parameters both in secrets and when running the workflow, the latter will overwrite the former.
     - `Settings` - `Pages`, change `Source` to `GitHub Actions`
-- The first time you enter `Actions`, you will get a warning `Workflows aren’t being run on this forked repository`, click the `I understand my workflows, go ahead and enable them` button to confirm the warning.
+- Enter `Actions`, you will get a warning `Workflows aren’t being run on this forked repository` for the first time, click the `I understand my workflows, go ahead and enable them` button to confirm the warning.
 
-### Deployment
+### Set parameters
 
-Assuming the static website files are located in `/path/to/static/dir` directory, package and compress them as `./files.tar.gz` and then encrypt them as `./files.tar.gz.enc`. Command example:
+There are 3 parameters to set:
+
+- `REMOTE_FILE_URL`: required, the URL of the static website package file.
+- `REMOTE_FILE_TYPE`: required, the format of the static website package file, options: `7z`, `tar`.
+- `REMOTE_FILE_PASSWORD`: optional, the encryption and decryption passphrase of the static website package file. If the file is not encrypted, this parameter does not need to be set.
+
+Parameters can be set in 2 places:
+
+- For fixed parameters: `Settings` - `Secrets` - `Actions`, click `New repository secret`, add them as secrets. You only need to set it here once, and leave it blank when running the workflow.
+- For non-fixed parameters: set each time the workflow is run. If the same parameter exists in secrets, it will be overwritten by the value set here.
+
+It is recommended that you use fixed parameters and set them to secrets if possible, rather than specifying them each time you run the workflow. This is because secrets are hidden in the workflow run log, whereas the parameters specified when running the workflow are output directly to the log, which is publicly viewable and cannot be hidden.
+
+### Package the static website files
+
+There are 4 types of packaged files supported, please select the packaged file type according to your preference. Each type and corresponding example file is as follows:
+
+- `demo/test.7z`: compressed with 7-Zip, not encrypted
+- `demo/test.enc.7z`: compressed and encrypted using 7-Zip, filenames are also encrypted, the password is `123456`
+- `demo/test.tar.gz`: compressed with tar, not encrypted
+- `demo/test.tar.gz.enc`: compressed with tar and then encrypted with openssl, the password is `123456`
+
+Assume that the static website files are located in the `/path/to/static/dir` directory, and the password is `YOUR_PASSWORD_123456`. The following are example commands for packaging, running on Ubuntu 20.04.
+
+Compressed to `/path/to/files.7z` using 7z, not encrypted:
+
+```bash
+cd /path/to/static/dir && 7z a /path/to/files.7z .
+```
+
+Compress and encrypt to `/path/to/files.7z` using 7z, filenames are also encrypted, the encryption and decryption passphrase is hard-coded into the command parameters:
+
+```bash
+cd /path/to/static/dir && 7z a -mhe=on -pYOUR_PASSWORD_123456 /path/to/files.7z .
+```
+
+You can also use the Windows GUI program to package static website files into 7z format.
+
+Use tar to compress as `./files.tar.gz`, not encrypted:
 
 ```bash
 tar --owner 0 --group 0 --numeric-owner -czvf files.tar.gz -C /path/to/static/dir .
+```
 
-# Enter your password after this command is started
-openssl enc -aes-256-cbc -pbkdf2 -pass stdin -in files.tar.gz -out files.tar.gz.enc
+Use tar and openssl to compress and encrypt the files as `./files.tar.gz.enc`, the encryption and decryption passphrase is hard-coded into the command parameters:
 
-# ------ Or ------
-
-# Combine the two commands above, the password is hard-coded into the command parameters
+```bash
 tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | openssl enc -aes-256-cbc -pbkdf2 -pass pass:YOUR_PASSWORD_123456 -in - -out files.tar.gz.enc
 ```
 
-- Upload `./files.tar.gz.enc` to your server
-- `Actions` - `Deploy to GitHub Pages` - `Run workflow`, click `Run workflow`, and wait for it to finish. In the workflow run, logs and artifacts will still contain private data and can be viewed publicly. After it is finished:
-    - If it runs successfully, the workflow run is automatically deleted, no further operation required
-    - If the run fails, you need to manually delete all workflow runs after troubleshooting
-- Delete the `files.tar.gz.enc file` from your server
+### Deployment
+
+Upload the static website package file to your server or file sharing services. Example command for uploading `/path/to/files.7z` to [file.io](https://www.file.io/) using the CLI:
+
+```bash
+curl -F 'file=@/tmp/test.bin' https://file.io/
+```
+
+`Actions` - `Deploy to GitHub Pages` - `Run workflow`, fill in the non-fixed parameters, click `Run workflow`, and wait for it to finish. After it is finished:
+
+- If it runs successfully, the workflow run is automatically deleted, no further operation required.
+- If the run fails, the workflow run will not be automatically deleted. The logs and artifacts may contain private data and are publicly viewable. Please delete all workflow runs manually after troubleshooting.
+
+Finally, delete the package file from your server, or cancel the file sharing.
 
 It is recommended that the above steps be fixed as a custom script.

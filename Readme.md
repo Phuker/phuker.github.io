@@ -2,7 +2,7 @@
 
 [简体中文](./Readme.md) [English](./Readme.en.md)
 
-从公开仓库私密发布 GitHub Pages 网站，类似使用私有仓库
+使用 GitHub Actions 从公开仓库私密发布 GitHub Pages 网站，完全隐藏网站文件列表和历史记录，无需付费
 
 ## 背景和原因
 
@@ -45,9 +45,9 @@ GitHub 免费账户[限制](https://github.com/pricing)只能从公开仓库发�
 
 共有 3 个参数需要设置：
 
-- `REMOTE_FILE_URL`：必须设置，静态网站打包文件的 URL
-- `REMOTE_FILE_TYPE`：必须设置，静态网站打包文件的格式，可选选项：`7z`，`tar`
-- `REMOTE_FILE_PASSWORD`：可选，静态网站打包文件的加密解密口令（密码），如果未加密，则不需要设置此参数
+- `REMOTE_FILE_URL`：必须设置，静态网站打包文件的 URL。
+- `REMOTE_FILE_TYPE`：必须设置，静态网站打包文件的格式，可选选项：`7z`，`tar`。
+- `REMOTE_FILE_PASSWORD`：可选，静态网站打包文件的加密解密口令（密码）。如果未加密，则不需要设置此参数。
 
 可以在 2 个位置设置参数：
 
@@ -95,10 +95,17 @@ tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | opens
 
 ### 部署
 
-- 把打包文件上传到服务器或者文件共享服务
-- `Actions` - `Deploy to GitHub Pages` - `Run workflow`，点击 `Run workflow`，等待运行完毕。workflow run 中，日志、artifacts 仍然包含隐私数据，可公开查看。运行完毕后：
-    - 如果运行成功，会自动删除 workflow run，无需进一步操作
-    - 如果运行失败，需要在排除错误后手动删除所有 workflow run
-- 删除服务器上的打包文件，取消文件共享
+把打包文件上传到你的服务器或者文件共享服务。使用命令行将打包文件 `/path/to/files.7z` 上传到 [file.io](https://www.file.io/) 示例：
+
+```bash
+curl -F 'file=@/tmp/test.bin' https://file.io/
+```
+
+`Actions` - `Deploy to GitHub Pages` - `Run workflow`，填写非固定参数，点击 `Run workflow`，等待运行完毕。运行完毕后：
+
+- 如果运行成功，workflow run 会自动删除，无需进一步操作。
+- 如果运行失败，workflow run 不会自动删除，其中的日志、artifacts 可能包含隐私数据，并且可以公开查看。请在排除错误后手动删除所有 workflow run。
+
+最后删除服务器上的打包文件，取消文件共享。
 
 建议将以上打包和部署步骤固定为自定义脚本。
