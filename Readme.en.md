@@ -30,7 +30,7 @@ Results:
 
 - A web service that can upload and download files, examples include:
     - A web server (it is recommended to upload to the same path every time, so that the download link will be fixed and you don't need to specify the URL every time you run the workflow)
-    - A file sharing service that provides direct download links, such as [file.io](https://www.file.io/) (file sharing services generally provide dynamic download links, you need to specify the URL every time you run the workflow)
+    - A temporary file-sharing service that provides direct download links, such as [Litterbox](https://litterbox.catbox.moe/) (download links from these services are usually not fixed, so you need to specify the remote file URL parameter each time the workflow runs)
 - Static website files that have been generated
 
 ### Initialize the code repository
@@ -95,10 +95,10 @@ tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | opens
 
 ### Deployment
 
-Upload the static website package file to your server or file sharing services. Example command for uploading `/path/to/files.7z` to [file.io](https://www.file.io/) using the CLI:
+Upload the static website package file to your server or file sharing services. Example command for uploading `/path/to/files.7z` to [Litterbox](https://litterbox.catbox.moe/) using the CLI:
 
 ```bash
-curl -F 'file=@/tmp/test.bin' https://file.io/
+curl -vv -F 'reqtype=fileupload' -F 'time=1h' -F 'fileNameLength=16' -F 'fileToUpload=@/path/to/files.7z' https://litterbox.catbox.moe/resources/internals/api.php
 ```
 
 `Actions` - `Deploy to GitHub Pages` - `Run workflow`, fill in the non-fixed parameters, click `Run workflow`, and wait for it to finish. After it is finished:

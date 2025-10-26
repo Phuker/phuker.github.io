@@ -30,7 +30,7 @@ GitHub 免费账户[限制](https://github.com/pricing)只能从公开仓库发�
 
 - 可以上传和下载文件的 web 服务，例如：
     - Web 服务器（推荐每次都上传到相同路径，下载链接固定，不需要每次运行 workflow 都指定参数）
-    - 可以直链下载的文件共享服务，例如 [file.io](https://www.file.io/)（这类服务的下载链接一般都不固定，每次运行 workflow 都需要指定参数）
+    - 可以直链下载的文件临时共享服务，例如 [Litterbox](https://litterbox.catbox.moe/)（这类服务的下载链接一般都不固定，每次运行 workflow 都需要指定参数）
 - 已生成的静态网站文件
 
 ### 初始化仓库
@@ -95,10 +95,10 @@ tar --owner 0 --group 0 --numeric-owner -czvf - -C /path/to/static/dir . | opens
 
 ### 部署
 
-把打包文件上传到你的服务器或者文件共享服务。使用命令行将打包文件 `/path/to/files.7z` 上传到 [file.io](https://www.file.io/) 示例：
+把打包文件上传到你的服务器或者文件共享服务。使用命令行将打包文件 `/path/to/files.7z` 上传到 [Litterbox](https://litterbox.catbox.moe/) 示例：
 
 ```bash
-curl -F 'file=@/tmp/test.bin' https://file.io/
+curl -vv -F 'reqtype=fileupload' -F 'time=1h' -F 'fileNameLength=16' -F 'fileToUpload=@/path/to/files.7z' https://litterbox.catbox.moe/resources/internals/api.php
 ```
 
 `Actions` - `Deploy to GitHub Pages` - `Run workflow`，填写非固定参数，点击 `Run workflow`，等待运行完毕。运行完毕后：
